@@ -1,10 +1,7 @@
 package ee.taltech.inbankbackend.service;
 
 import ee.taltech.inbankbackend.config.DecisionEngineConstants;
-import ee.taltech.inbankbackend.exceptions.InvalidLoanAmountException;
-import ee.taltech.inbankbackend.exceptions.InvalidLoanPeriodException;
-import ee.taltech.inbankbackend.exceptions.InvalidPersonalCodeException;
-import ee.taltech.inbankbackend.exceptions.NoValidLoanException;
+import ee.taltech.inbankbackend.exceptions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,13 +21,21 @@ class DecisionEngineTest {
     private String segment1PersonalCode;
     private String segment2PersonalCode;
     private String segment3PersonalCode;
+    private String tooOldMalePersonalCode;
+    private String tooOldFemalePersonalCode;
+    private String tooYoungMalePersonalCode;
+    private String tooYoungFemalePersonalCode;
 
     @BeforeEach
     void setUp() {
         debtorPersonalCode = "37605030299";
         segment1PersonalCode = "50307172740";
         segment2PersonalCode = "38411266610";
-        segment3PersonalCode = "35006069515";
+        segment3PersonalCode = "38401019997";
+        tooOldMalePersonalCode = "35006069515";
+        tooOldFemalePersonalCode = "25006069514";
+        tooYoungMalePersonalCode = "51001019515";
+        tooYoungFemalePersonalCode = "61001019516";
     }
 
     @Test
@@ -41,7 +46,7 @@ class DecisionEngineTest {
 
     @Test
     void testSegment1PersonalCode() throws InvalidLoanPeriodException, NoValidLoanException,
-            InvalidPersonalCodeException, InvalidLoanAmountException {
+            InvalidPersonalCodeException, InvalidLoanAmountException, InvalidAgeException {
         Decision decision = decisionEngine.calculateApprovedLoan(segment1PersonalCode, 4000L, 12);
         assertEquals(2000, decision.getLoanAmount());
         assertEquals(20, decision.getLoanPeriod());
@@ -49,7 +54,7 @@ class DecisionEngineTest {
 
     @Test
     void testSegment2PersonalCode() throws InvalidLoanPeriodException, NoValidLoanException,
-            InvalidPersonalCodeException, InvalidLoanAmountException {
+            InvalidPersonalCodeException, InvalidLoanAmountException, InvalidAgeException {
         Decision decision = decisionEngine.calculateApprovedLoan(segment2PersonalCode, 4000L, 12);
         assertEquals(3600, decision.getLoanAmount());
         assertEquals(12, decision.getLoanPeriod());
@@ -57,7 +62,7 @@ class DecisionEngineTest {
 
     @Test
     void testSegment3PersonalCode() throws InvalidLoanPeriodException, NoValidLoanException,
-            InvalidPersonalCodeException, InvalidLoanAmountException {
+            InvalidPersonalCodeException, InvalidLoanAmountException, InvalidAgeException {
         Decision decision = decisionEngine.calculateApprovedLoan(segment3PersonalCode, 4000L, 12);
         assertEquals(10000, decision.getLoanAmount());
         assertEquals(12, decision.getLoanPeriod());
@@ -96,7 +101,7 @@ class DecisionEngineTest {
 
     @Test
     void testFindSuitableLoanPeriod() throws InvalidLoanPeriodException, NoValidLoanException,
-            InvalidPersonalCodeException, InvalidLoanAmountException {
+            InvalidPersonalCodeException, InvalidLoanAmountException, InvalidAgeException {
         Decision decision = decisionEngine.calculateApprovedLoan(segment2PersonalCode, 2000L, 12);
         assertEquals(3600, decision.getLoanAmount());
         assertEquals(12, decision.getLoanPeriod());
@@ -108,5 +113,33 @@ class DecisionEngineTest {
                 () -> decisionEngine.calculateApprovedLoan(debtorPersonalCode, 10000L, 60));
     }
 
+    @Test
+    void testTooOldMale() {
+        InvalidAgeException ex = assertThrows(InvalidAgeException.class,
+                () -> decisionEngine.calculateApprovedLoan(tooOldMalePersonalCode, 2000L, 60));
+        assertEquals(ex.getMessage(), "Customer is too old for a loan.");
+    }
+
+    @Test
+    void testTooOldFemale() {
+        InvalidAgeException ex = assertThrows(InvalidAgeException.class,
+                () -> decisionEngine.calculateApprovedLoan(tooOldFemalePersonalCode, 2000L, 60));
+        assertEquals(ex.getMessage(), "Customer is too old for a loan.");
+    }
+
+    @Test
+    void testTooYoungMale() {
+        InvalidAgeException ex = assertThrows(InvalidAgeException.class,
+                () -> decisionEngine.calculateApprovedLoan(tooYoungMalePersonalCode, 2000L, 60));
+        assertEquals(ex.getMessage(), "Customer is too young for a loan.");
+
+    }
+
+    @Test
+    void testTooYoungFemale() {
+        InvalidAgeException ex = assertThrows(InvalidAgeException.class,
+                () -> decisionEngine.calculateApprovedLoan(tooYoungFemalePersonalCode, 2000L, 60));
+        assertEquals(ex.getMessage(), "Customer is too young for a loan.");
+    }
 }
 
